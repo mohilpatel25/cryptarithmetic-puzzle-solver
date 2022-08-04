@@ -1,68 +1,76 @@
-import re
+'''Cryptarithmetic puzzles are arithmetic problems made of letters instead of
+numbers. The goal is to replace each letter with a single, unique digit in order
+to make the arithmetic work out correctly.
 
-solved = False
+Example:  S E N D + M O R E = M O N E Y
 
-def solve(letters, values, visited, words):
-    global solved
-    if len(set) == len(values):
-        map = {}
-        for letter, val in zip(letters,values):
-            map[letter] = val
-        
-        if map[words[0][0]] == 0 or map[words[1][0]] == 0 or map[words[2][0]] == 0:
-            return
-        
-        word1, word2, res = "", "", ""
-        for c in words[0]:
-            word1 += str(map[c])
-        for c in words[1]:
-            word2 += str(map[c])
-        for c in words[2]:
-            res += str(map[c])
-
-        if int(word1) + int(word2) == int(res):
-            print("{} + {} = {}\t{}".format(word1, word2, res, map))
-            solved = True
-        
-        return
-
-    for i in range(10):
-        if not visited[i]:
-            visited[i] = True
-            values.append(i)
-            solve(letters, values, visited, words)
-            values.pop()
-            visited[i] = False        
+   S E N D
++  M O R E
+----------
+ M O N E Y
+----------
+Vales which satisfies this constraints
+S = 9, E = 5, N = 6, D = 7, M = 1, O = 0, R = 8, Y = 2
+'''
 
 
-print("\nCRYPTARITHMETIC PUZZLE SOLVER")
-print("WORD1 + WORD2 = RESULT")
-word1 = input("Enter WORD1: ").upper()
-word2 = input("Enter WORD2: ").upper()
-result = input("Enter RESULT: ").upper()
+def find_value(word, assigned):
+  num = 0
+  for char in word:
+    num = num * 10
+    num += assigned[char]
+  return num
 
-if (not re.match("^[A-Z]*$", word1)) or (not re.match("^[A-Z]*$", word2)) or (not re.match("^[A-Z]*$", result)):
-    print("\nOnly Letters allowed.")
-elif len(result) > (max(len(word1), len(word2)) + 1):
-    print("\n0 Solutions!")
-else:
-    set = []
-    for c in word1:
-        if c not in set:
-            set.append(c)
-    for c in word2:
-        if c not in set:
-            set.append(c)
-    for c in result:
-        if c not in set:
-            set.append(c)
-    
-    if len(set) > 10:
-        print("\nNo solutions!")
-        exit()
-    
-    print("Solutions:")
-    solve(set, [], [False for _ in range(10)], [word1, word2, result])
 
-    if not solved:
-        print("\n0 solutions!")
+def is_valid_assignment(word1, word2, result, assigned):
+  # First letter of any word cannot be zero.
+  if assigned[word1[0]] == 0 or assigned[word2[0]] == 0 or assigned[
+      result[0]] == 0:
+    return False
+  return True
+
+
+def _solve(word1, word2, result, letters, assigned, solutions):
+  if not letters:
+    if is_valid_assignment(word1, word2, result, assigned):
+      num1 = find_value(word1, assigned)
+      num2 = find_value(word2, assigned)
+      num_result = find_value(result, assigned)
+      if num1 + num2 == num_result:
+        solutions.append((f'{num1} + {num2} = {num_result}', assigned.copy()))
+    return
+
+  for num in range(10):
+    if num not in assigned.values():
+      cur_letter = letters.pop()
+      assigned[cur_letter] = num
+      _solve(word1, word2, result, letters, assigned, solutions)
+      assigned.pop(cur_letter)
+      letters.append(cur_letter)
+
+
+def solve(word1, word2, result):
+  letters = sorted(set(word1) | set(word2) | set(result))
+  if len(result) > max(len(word1), len(word2)) + 1 or len(letters) > 10:
+    print('0 Solutions!')
+    return
+
+  solutions = []
+  _solve(word1, word2, result, letters, {}, solutions)
+  if solutions:
+    print('\nSolutions:')
+    for soln in solutions:
+      print(f'{soln[0]}\t{soln[1]}')
+
+
+if __name__ == '__main__':
+  print('CRYPTARITHMETIC PUZZLE SOLVER')
+  print('WORD1 + WORD2 = RESULT')
+  word1 = input('Enter WORD1: ').upper()
+  word2 = input('Enter WORD2: ').upper()
+  result = input('Enter RESULT: ').upper()
+
+  if not word1.isalpha() or not word2.isalpha() or not result.isalpha():
+    raise TypeError('Inputs should ony consists of alphabets.')
+
+  solve(word1, word2, result)
